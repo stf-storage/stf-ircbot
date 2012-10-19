@@ -202,7 +202,7 @@ sub handle_entity {
         my $mode    = fmt_storage_mode($storage->{mode});
         my $uri     = "$storage->{uri}/$object->{internal_name}";
         my $code    = 'N/A';
-        if ($storage_api->is_readable($storage->{mode}, 1)){
+        if ($storage_api->is_readable($storage, 1)){
             ($code) = $furl->head($uri);
         }
 

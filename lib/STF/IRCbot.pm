@@ -37,6 +37,7 @@ sub run {
 
     AnySan->register_listener(
         config => { cb => sub { $self->handle_config(@_) } },
+        object => { cb => sub { $self->handle_object(@_) } },
     );
 
     AnySan->run;
@@ -52,9 +53,9 @@ sub strip_command {
     return $message;
 }
 
-# !stf-bot set KEY VAL
-# !stf-bot rm  KEY
-# !stf-bot KEY
+# !stf-bot config set KEY VAL
+# !stf-bot config rm  KEY
+# !stf-bot config     KEY
 sub handle_config {
     my ($self, $receive) = @_;
 
@@ -93,6 +94,60 @@ sub handle_config {
             $receive->send_reply( "$subcmd is '$varvalue'" );
         }
     }
+}
+
+# !stf-bot object <OBJECT_ID>
+# !stf-bot object <OBJECT_PATH>
+
+sub handle_object {
+    my ($self, $receive) = @_;
+
+    my $message = $self->strip_command("object", $receive->message);
+    if (! defined $message) {
+        return;
+    }
+
+    $message =~ s/\s+//g;
+
+    if (! $message) {
+        $receive->send_reply( "object <OBJECT_ID> | object <OBJECT_PATH>" );
+        return;
+    }
+
+    my $object_id;
+    if ($message !~ /\D/) {
+        $object_id = $message;
+    } elsif ($message =~ m{^/([^/]+)/(.+)}) {
+        # Parse the path into /<bucket>/<object_path
+        my $bucket_name = $1;
+        my $path        = $2;
+        $bucket = $self->get('API::Bucket')->lookup_by_name($bucket_name);
+        if ($bucket) {
+            $object_id = $self->get('API::Object')->find_object_id($bucket->{id}, $path);
+        }
+    }
+
+    my $object = $self->get('API::Object')->lookup($object_id);
+    if (! $bucket) {
+        $bucket = $self->get('API::Bucket')->lookup($object->{bucket_id});
+    }
+
+    if (! $object || ! $bucket) {
+        $receive->send_reply( "Object '$object_id' not found" );
+    }
+
+    my $cluster = $self->get('API::StorageCluster')->load_for_object($object->{id});
+    my $pubic_uri = $self->get('API::Config')->load_variable('stf.global.public_uri');
+    $receive->send_reply($_) for (
+        "Object '$message' is:",
+        "  ID: $object->{id}",
+        "  URI: $public_uri/$object->{name}",
+        "  Bucket: $bucket->{name}",
+        "  Cluster: @{[ $cluster ? $cluster->{id} : "N/A" ]}",
+        "  Size: $object->{size}",
+        "  Status: @{[ $object->{status} ? "Active" : "Inactive" ]}",
+        "  Created: @{[ scalar $object->{created_at} ]}",
+    );
 }
 
 1;

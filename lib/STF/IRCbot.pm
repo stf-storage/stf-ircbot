@@ -39,6 +39,7 @@ sub run {
 
     AnySan->register_listener(@$_) for (
         [ config => { cb => sub { $self->handle_config(@_) } } ],
+        [ entity => { cb => sub { $self->handle_entity(@_) } } ],
         [ object => { cb => sub { $self->handle_object(@_) } } ],
     );
 
@@ -174,7 +175,7 @@ sub handle_entity {
     $message =~ s/\s+//g;
 
     if (! $message) {
-        $receive->send_reply( "object <OBJECT_ID> | object <OBJECT_PATH>" );
+        $receive->send_reply( "entity <OBJECT_ID> | entity <OBJECT_PATH>" );
         return;
     }
 

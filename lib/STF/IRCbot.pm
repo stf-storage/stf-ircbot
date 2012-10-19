@@ -129,9 +129,8 @@ sub handle_config {
     }
 }
 
-# !stf-bot object <OBJECT_ID>
-# !stf-bot object <OBJECT_PATH>
-
+# !stf-bot object <OBJECT_ID|OBJECT_PATH>
+# !stf-bot object repair <OBJECT_ID|OBJECT_PATH>
 sub handle_object {
     my ($self, $receive) = @_;
 
@@ -140,35 +139,45 @@ sub handle_object {
         return;
     }
 
-    $message =~ s/\s+//g;
+    my ($subcmd, $object_id) = split /\s+/, $message;
+    if (! $subcmd && $object_id) {
+        $object_id = $subcmd;
+        $subcmd = 'show';
+    }
 
-    if (! $message) {
-        $receive->send_reply( "object <OBJECT_ID> | object <OBJECT_PATH>" );
+    if (! $subcmd || $subcmd !~ /^(?:show|repair)/) {
+        $receive->send_reply( "object <OBJECT_ID|OBJECT_PATH> | object repair <OBJECT_ID|OBJECT_PATH>" );
         return;
     }
 
-    my ($bucket, $object) = $self->load_object($message);
+    my ($bucket, $object) = $self->load_object($object_id);
     if (! $object || ! $bucket) {
-        $receive->send_reply( "Object '$object->{id}' not found" );
+        $receive->send_reply( "Object '$object_id' not found" );
         return;
     }
 
-    my $cluster = $self->get('API::StorageCluster')->load_for_object($object->{id});
-    my $public_uri = $self->get('API::Config')->load_variable('stf.global.public_uri');
-    my $uri = "$public_uri/$bucket->{name}/$object->{name}";
-    if ($self->cripple_links) {
-        $uri =~ s/^h//;
+    if ($subcmd eq 'repair') {
+        $self->get('API::Queue')->enqueue(repair_object => $object->{id});
+        $receive->send_reply( "Object '$object_id' was sent to repair queue" );
+        return;
+    } elsif ($subcmd eq 'show') {
+        my $cluster = $self->get('API::StorageCluster')->load_for_object($object->{id});
+        my $public_uri = $self->get('API::Config')->load_variable('stf.global.public_uri');
+        my $uri = "$public_uri/$bucket->{name}/$object->{name}";
+        if ($self->cripple_links) {
+            $uri =~ s/^h//;
+        }
+        $receive->send_reply($_) for (
+            "Object '$message' is:",
+            "    ID: $object->{id}",
+            "    URI: $uri",
+            "    Bucket: $bucket->{name}",
+            "    Cluster: @{[ $cluster ? $cluster->{id} : 'N/A' ]}",
+            "    Size: $object->{size}",
+            "    Status: @{[ $object->{status} ? 'Active' : 'Inactive' ]}",
+            "    Created: @{[ scalar localtime $object->{created_at} ]}",
+        );
     }
-    $receive->send_reply($_) for (
-        "Object '$message' is:",
-        "  ID: $object->{id}",
-        "  URI: $uri",
-        "  Bucket: $bucket->{name}",
-        "  Cluster: @{[ $cluster ? $cluster->{id} : 'N/A' ]}",
-        "  Size: $object->{size}",
-        "  Status: @{[ $object->{status} ? 'Active' : 'Inactive' ]}",
-        "  Created: @{[ scalar localtime $object->{created_at} ]}",
-    );
 }
 
 sub handle_entity {
@@ -216,7 +225,7 @@ sub handle_entity {
         if ($self->cripple_links) {
             $uri =~ s/^h//;
         }
-        $receive->send_reply( "[$storage->{id}][$mode] $uri ($code)" );
+        $receive->send_reply( "    [$storage->{id}][$mode] $uri ($code)" );
     }
 }
 

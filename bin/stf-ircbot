@@ -5,7 +5,7 @@ use STF::IRCbot;
 
 my $cxt = STF::Context->bootstrap;
 my $irc = STF::IRCbot->new(
-    $cxt->config->{IRCbot},
+    %{ $cxt->config->{IRCbot} },
     container => $cxt->container
 );
 $irc->run;

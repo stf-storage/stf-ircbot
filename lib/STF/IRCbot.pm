@@ -35,9 +35,9 @@ sub run {
         channels => $self->channels,
     );
 
-    AnySan->register_listener(
-        config => { cb => sub { $self->handle_config(@_) } },
-        object => { cb => sub { $self->handle_object(@_) } },
+    AnySan->register_listener(@$_) for (
+        [ config => { cb => sub { $self->handle_config(@_) } } ],
+        [ object => { cb => sub { $self->handle_object(@_) } } ],
     );
 
     AnySan->run;
@@ -124,7 +124,10 @@ sub handle_object {
         my $path        = $2;
         $bucket = $self->get('API::Bucket')->lookup_by_name($bucket_name);
         if ($bucket) {
-            $object_id = $self->get('API::Object')->find_object_id($bucket->{id}, $path);
+            $object_id = $self->get('API::Object')->find_object_id({
+                bucket_id => $bucket->{id},
+                object_name => $path
+            });
         }
     }
 

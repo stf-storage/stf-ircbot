@@ -140,7 +140,7 @@ sub handle_object {
     }
 
     my ($subcmd, $object_id) = split /\s+/, $message;
-    if (! $subcmd && $object_id) {
+    if ($subcmd && !$object_id) {
         $object_id = $subcmd;
         $subcmd = 'show';
     }
@@ -168,7 +168,7 @@ sub handle_object {
             $uri =~ s/^h//;
         }
         $receive->send_reply($_) for (
-            "Object '$message' is:",
+            "Object '$object_id' is:",
             "    ID: $object->{id}",
             "    URI: $uri",
             "    Bucket: $bucket->{name}",

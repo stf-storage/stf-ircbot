@@ -145,7 +145,7 @@ sub handle_object {
     $receive->send_reply($_) for (
         "Object '$message' is:",
         "  ID: $object->{id}",
-        "  URI: $public_uri/$object->{name}",
+        "  URI: $public_uri/$bucket->{name}/$object->{name}",
         "  Bucket: $bucket->{name}",
         "  Cluster: @{[ $cluster ? $cluster->{id} : 'N/A' ]}",
         "  Size: $object->{size}",

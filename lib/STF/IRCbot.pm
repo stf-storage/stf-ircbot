@@ -150,7 +150,7 @@ sub handle_object {
         "  Cluster: @{[ $cluster ? $cluster->{id} : 'N/A' ]}",
         "  Size: $object->{size}",
         "  Status: @{[ $object->{status} ? 'Active' : 'Inactive' ]}",
-        "  Created: @{[ scalar $object->{created_at} ]}",
+        "  Created: @{[ scalar localtime $object->{created_at} ]}",
     );
 }
 

@@ -144,9 +144,9 @@ sub handle_object {
         "  ID: $object->{id}",
         "  URI: $public_uri/$object->{name}",
         "  Bucket: $bucket->{name}",
-        "  Cluster: @{[ $cluster ? $cluster->{id} : "N/A" ]}",
+        "  Cluster: @{[ $cluster ? $cluster->{id} : 'N/A' ]}",
         "  Size: $object->{size}",
-        "  Status: @{[ $object->{status} ? "Active" : "Inactive" ]}",
+        "  Status: @{[ $object->{status} ? 'Active' : 'Inactive' ]}",
         "  Created: @{[ scalar $object->{created_at} ]}",
     );
 }

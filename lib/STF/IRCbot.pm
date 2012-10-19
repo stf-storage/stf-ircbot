@@ -115,6 +115,7 @@ sub handle_object {
     }
 
     my $object_id;
+    my $bucket;
     if ($message !~ /\D/) {
         $object_id = $message;
     } elsif ($message =~ m{^/([^/]+)/(.+)}) {
@@ -137,7 +138,7 @@ sub handle_object {
     }
 
     my $cluster = $self->get('API::StorageCluster')->load_for_object($object->{id});
-    my $pubic_uri = $self->get('API::Config')->load_variable('stf.global.public_uri');
+    my $public_uri = $self->get('API::Config')->load_variable('stf.global.public_uri');
     $receive->send_reply($_) for (
         "Object '$message' is:",
         "  ID: $object->{id}",

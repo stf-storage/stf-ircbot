@@ -7,6 +7,9 @@ use feature 'state';
 
 with 'STF::Trait::WithContainer';
 
+# some IRC clients like LimeChat automatically fetches the images
+# that are pasted on the screen. this makes http:// links to ttp://
+has cripple_links => (is => 'rw', default => 1);
 has interval => (is => 'rw');
 has key => (is => 'rw');
 has nickname => (is => 'rw');
@@ -152,10 +155,14 @@ sub handle_object {
 
     my $cluster = $self->get('API::StorageCluster')->load_for_object($object->{id});
     my $public_uri = $self->get('API::Config')->load_variable('stf.global.public_uri');
+    my $uri = "$public_uri/$bucket->{name}/$object->{name}";
+    if ($self->cripple_links) {
+        $uri =~ s/^h//;
+    }
     $receive->send_reply($_) for (
         "Object '$message' is:",
         "  ID: $object->{id}",
-        "  URI: $public_uri/$bucket->{name}/$object->{name}",
+        "  URI: $uri",
         "  Bucket: $bucket->{name}",
         "  Cluster: @{[ $cluster ? $cluster->{id} : 'N/A' ]}",
         "  Size: $object->{size}",
@@ -206,6 +213,9 @@ sub handle_entity {
             (undef, $code) = $furl->head($uri);
         }
 
+        if ($self->cripple_links) {
+            $uri =~ s/^h//;
+        }
         $receive->send_reply( "[$storage->{id}][$mode] $uri ($code)" );
     }
 }

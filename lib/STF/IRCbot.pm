@@ -203,7 +203,7 @@ sub handle_entity {
         my $uri     = "$storage->{uri}/$object->{internal_name}";
         my $code    = 'N/A';
         if ($storage_api->is_readable($storage, 1)){
-            ($code) = $furl->head($uri);
+            (undef, $code) = $furl->head($uri);
         }
 
         $receive->send_reply( "[$storage->{id}][$mode] $uri ($code)" );

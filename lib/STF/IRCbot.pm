@@ -51,7 +51,7 @@ sub run {
 
 sub dispatch {
     my ($self, $command, @args) = @_;
-    my $guard = $self->new_scope();
+    my $guard = $self->container->new_scope();
     my $method = "handle_$command";
     $self->$method(@args);
 }

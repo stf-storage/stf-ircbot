@@ -41,12 +41,19 @@ sub run {
     );
 
     AnySan->register_listener(@$_) for (
-        [ config => { cb => sub { $self->handle_config(@_) } } ],
-        [ entity => { cb => sub { $self->handle_entity(@_) } } ],
-        [ object => { cb => sub { $self->handle_object(@_) } } ],
+        [ config => { cb => sub { $self->dispatch("config", @_) } } ],
+        [ entity => { cb => sub { $self->dispatch("entity", @_) } } ],
+        [ object => { cb => sub { $self->dispatch("objcet", @_) } } ],
     );
 
     AnySan->run;
+}
+
+sub dispatch {
+    my ($self, $command, @args) = @_;
+    my $guard = $self->new_scope();
+    my $method = "handle_$command";
+    $self->$method(@args);
 }
 
 sub strip_command {

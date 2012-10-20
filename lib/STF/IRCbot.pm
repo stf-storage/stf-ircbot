@@ -43,7 +43,7 @@ sub run {
     AnySan->register_listener(@$_) for (
         [ config => { cb => sub { $self->dispatch("config", @_) } } ],
         [ entity => { cb => sub { $self->dispatch("entity", @_) } } ],
-        [ object => { cb => sub { $self->dispatch("objcet", @_) } } ],
+        [ object => { cb => sub { $self->dispatch("object", @_) } } ],
     );
 
     AnySan->run;

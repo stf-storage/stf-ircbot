@@ -5,6 +5,8 @@ use AnySan::Provider::IRC ();
 use STF::Constants qw(:storage);
 use feature 'state';
 
+our $VERSION = '0.01';
+
 with 'STF::Trait::WithContainer';
 
 # some IRC clients like LimeChat automatically fetches the images

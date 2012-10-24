@@ -271,7 +271,7 @@ sub handle_storage {
     $message =~ s/\s+//g;
 
     my ($subcmd, $storage_id) = split /\s+/, $message;
-    if (! $storage_id) {
+    if ($subcmd =~ /^\d+$/ && ! $storage_id) {
         $storage_id = $subcmd;
         $subcmd = "show";
     }

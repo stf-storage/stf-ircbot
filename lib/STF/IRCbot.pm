@@ -43,9 +43,10 @@ sub run {
     );
 
     AnySan->register_listener(@$_) for (
-        [ config => { cb => sub { $self->dispatch("config", @_) } } ],
-        [ entity => { cb => sub { $self->dispatch("entity", @_) } } ],
-        [ object => { cb => sub { $self->dispatch("object", @_) } } ],
+        map {
+            my $key = $_;
+            [ $key => { cb => sub { $self->dispatch($key, @_) } } ]
+        } qw(config entity object storage)
     );
 
     AnySan->run;
@@ -213,7 +214,7 @@ sub handle_entity {
     my @entities = $self->get('API::Entity')->search({
         object_id => $object->{id}
     });
-    
+
     if (! @entities) {
         $receive->send_reply( "No entities found for '$message'" );
         return;
@@ -254,6 +255,54 @@ sub fmt_storage_mode {
         STORAGE_MODE_REPAIR_DONE() => 'repair done',
     };
     $modes->{$_[0]} || "unknown ($_[0])";
+}
+
+# !stf-bot storage list
+# !stf-bot storage show <STORAGE_ID>
+# !stf-bot storage mode <STORAGE_ID> <MODE>  # XXX UNIMPLEMENTED
+sub handle_storage {
+    my ($self, $receive) = @_;
+
+    my $message = $self->strip_command("storage", $receive->message);
+    if (! defined $message) {
+        return;
+    }
+
+    $message =~ s/\s+//g;
+
+    my ($subcmd, $storage_id) = split /\s+/, $message;
+    if (! $storage_id) {
+        $storage_id = $subcmd;
+        $subcmd = "show";
+    }
+
+    if (!$subcmd && $subcmd !~ /^list|show$/) {
+        $receive->send_reply( "storage list | storage [show] <STORAGE_ID>" );
+        return;
+    }
+
+    if ($subcmd eq 'list') {
+        my @storages = $self->get('API::Storage')->search();
+        foreach my $storage (@storages) {
+            my $mode = fmt_storage_mode($storage->{mode});
+            $receive->send_reply( "[$storage->{id}] $storage->{uri} ($mode)" );
+        }
+    } else {
+        my $storage = $self->get('API::Storage')->lookup($storage_id);
+
+        if (! $storage) {
+            $receive->send_reply("storage $storage_id was not found");
+            return;
+        }
+
+        $receive->send_reply($_) for (
+            "Storage $storage_id is:",
+            "    ID: $storage->{uri}",
+            "    URI: $storage->{uri}",
+            "    cluster: $storage->{cluster_id}",
+            "    mode: " . fmt_storage_mode($storage->{mode}),
+        );
+    }
 }
 
 1;
